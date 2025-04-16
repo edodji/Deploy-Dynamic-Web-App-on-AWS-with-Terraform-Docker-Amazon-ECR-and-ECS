@@ -1,3 +1,5 @@
+![Alt text](/Static-Web-App-on-AWS-with-Docker-Amazon-ECR.png)
+
 # Host-a-Dynamic-Web-App-on-AWS-with-Terraform-Docker-Amazon-ECR-and-ECS
 
 This project demonstrates how to deploy a **dynamic, containerized web application** on AWS using modern DevOps tools and services: **Terraform**, **Docker**, **Amazon Elastic Container Registry (ECR)**, and **Amazon Elastic Container Service (ECS)** with **Fargate**.
