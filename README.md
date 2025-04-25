@@ -108,12 +108,13 @@ variable "hosted_zone_id" {
 
 ---
 
-https://github.com/edodji/terraform-vpc-module
-
 
 ##  Highlights
 
 -  Reusable Terraform templates  
 -  Cloud-native deployment on AWS  
 -  Dockerized microservice architecture  
--  Push-to-deploy with ECR + ECS  
+-  Push-to-deploy with ECR + ECS
+
+## All the terraform code use to create the infrastucture are in this repository
+-  https://github.com/edodji/terraform-vpc-module
