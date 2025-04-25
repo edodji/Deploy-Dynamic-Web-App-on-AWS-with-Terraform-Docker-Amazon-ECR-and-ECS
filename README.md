@@ -1,4 +1,4 @@
-![Alt text](/Static-Web-App-on-AWS-with-Docker-Amazon-ECR.png)
+![Alt text](/Dynamic-Web-App-on-AWS-with-Docker-Amazon-ECR.png)
 
 
 # Host-a-Dynamic-Web-App-on-AWS-with-Terraform-Docker-Amazon-ECR-and-ECS
