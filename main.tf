@@ -1,120 +1,127 @@
-# create vpc
-resource "aws_vpc" "vpc" {
-  cidr_block           = var.vpc_cidr
-  instance_tenancy     = "default"
-  enable_dns_hostnames = true
+# create security group for the application load balancer
+resource "aws_security_group" "alb_security_group" {
+  name        = "${var.project_name}-${var.environment}-alb-sg"
+  description = "enable http/https access on port 80/443"
+  vpc_id      = var.vpc_id
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpc"
+  ingress {
+    description = "http access"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-# create internet gateway and attach it to vpc
-resource "aws_internet_gateway" "internet_gateway" {
-  vpc_id = aws_vpc.vpc.id
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-igw"
+  ingress {
+    description = "https access"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-# use data source to get all avalablility zones in region
-data "aws_availability_zones" "available_zones" {}
-
-# create public subnet az1
-resource "aws_subnet" "public_subnet_az1" {
-  vpc_id                  = aws_vpc.vpc.id 
-  cidr_block              = var.public_subnet_az1_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[0]
-  map_public_ip_on_launch =true
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-public-az1"
-  }
-}
-
-# create public subnet az2
-resource "aws_subnet" "public_subnet_az2" {
-  vpc_id                  = aws_vpc.vpc.id 
-  cidr_block              = var.public_subnet_az2_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-public-az2"
-  }
-}
-
-# create route table and add public route
-resource "aws_route_table" "public_route_table" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.internet_gateway.id
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-public-rt"
+    Name = "${var.project_name}-${var.environment}-alb-sg"
   }
 }
 
-# associate public subnet az1 to "public route table"
-resource "aws_route_table_association" "public_subnet_az1_rt_association" {
-  subnet_id      = aws_subnet.public_subnet_az1.id
-  route_table_id = aws_route_table.public_route_table.id
-}
+# create security group for the bastion host aka jump box
+resource "aws_security_group" "bastion_security_group" {
+  name        = "${var.project_name}-${var.environment}-bastion-sg"
+  description = "enable ssh access on port 22"
+  vpc_id      = var.vpc_id
 
-# associate public subnet az2 to "public route table"
-resource "aws_route_table_association" "public_subnet_2_rt_association" {
-  subnet_id      = aws_subnet.public_subnet_az2.id
-  route_table_id = aws_route_table.public_route_table.id
-}
+  ingress {
+    description = "ssh access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.ssh_ip]
+  }
 
-# create private app subnet az1
-resource "aws_subnet" "private_app_subnet_az1" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_app_subnet_az1_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[0]
-  map_public_ip_on_launch = false
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-app-az1"
+    Name = "${var.project_name}-${var.environment}-bastion-sg"
   }
 }
 
-# create private app subnet az2
-resource "aws_subnet" "private_app_subnet_az2" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_app_subnet_az2_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch = false
+# create security group for the app server
+resource "aws_security_group" "app_server_security_group" {
+  name        = "${var.project_name}-${var.environment}-app-server-sg"
+  description = "enable http/https access on port 80/443 via alb sg"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description     = "http access"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_security_group.id]
+  }
+
+  ingress {
+    description     = "https access"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_security_group.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-app-az2"
+    Name = "${var.project_name}-${var.environment}-app-server-sg"
   }
 }
 
-# create private data subnet az1
-resource "aws_subnet" "private_data_subnet_az1" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_data_subnet_az1_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[0]
-  map_public_ip_on_launch = false
+# create security group for the database
+resource "aws_security_group" "database_security_group" {
+  name        = "${var.project_name}-${var.environment}-database-sg"
+  description = "enable mysql/aurora access on port 3306"
+  vpc_id      = var.vpc_id
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-private-data-az1"
+  ingress {
+    description     = "mysql/aurora access"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_server_security_group.id]
   }
-}
 
-# create private data subnet az2
-resource "aws_subnet" "private_data_subnet_az2" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_data_subnet_az2_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch = false
+  ingress {
+    description     = "custom access"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.bastion_security_group.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-data-az2"
+    Name = "${var.project_name}-${var.environment}-database-sg"
   }
 }
