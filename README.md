@@ -108,6 +108,9 @@ variable "hosted_zone_id" {
 
 ---
 
+https://github.com/edodji/terraform-vpc-module
+
+
 ##  Highlights
 
 -  Reusable Terraform templates  
