@@ -48,16 +48,7 @@ This project demonstrates how to deploy a **dynamic, containerized web applicati
 
 
 
-##  Getting Started
 
-### 1. Terraform state file
-I create s3 bucket and store the state file in the s3 bucket.I create DynamoDB table to lock the terraform state file
-
-### 2. Clone the Repository
-
-```bash
-git clone https://github.com/your-username/aws-dynamic-webapp-terraform-docker.git
-cd aws-dynamic-webapp-terraform-docker
 ```
 
 ### 3. Configure AWS CLI
