@@ -50,7 +50,8 @@ This project demonstrates how to deploy a **dynamic, containerized web applicati
 
 ### 1. Terraform state file
 I create s3 bucket and store the state file in the s3 bucket.I create DynamoDB table to lock the terraform state file
-```#store the terraform state file in s3 and lock with dynamodb
+```
+#store the terraform state file in s3 and lock with dynamodb
 terraform {
   backend "s3" {
     bucket         = "terrafor-state-file"
